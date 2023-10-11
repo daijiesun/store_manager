@@ -11,4 +11,4 @@ interface ImportMetaEnv {
   // 更多环境变量...
 }
 
-declare module "md5" {}
+// declare module "md5" {}

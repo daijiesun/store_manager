@@ -1,23 +1,17 @@
 import { SSStorate } from '@/utils/storage';
 import axios, { AxiosResponse } from 'axios';
 import { ElMessage } from 'element-plus'
-// Add a request interceptor
+
 axios.interceptors.request.use(function (config) {
-  // Do something before request is sent
   return config;
 }, function (error) {
-  // Do something with request error
   return Promise.reject(error);
 });
 
 // Add a response interceptor
 axios.interceptors.response.use(function (response) {
-  // Any status code that lie within the range of 2xx cause this function to trigger
-  // Do something with response data
   return response;
 }, function (error) {
-  // Any status codes that falls outside the range of 2xx cause this function to trigger
-  // Do something with response error
   return Promise.reject(error);
 });
 
@@ -25,33 +19,26 @@ axios.defaults.baseURL = import.meta.env.VITE_APP_API;
 
 function FETCH<T>(url: string, method: string, data: any): Promise<T> {
   axios.defaults.headers['Authorization'] = SSStorate.getItem('token')//"AUTH_TOKEN";
-  // axios.defaults.headers['AUTH_TOKEN'] = "sdj";
   const METHOD: any = (axios as any)[method];
-  let params;
-  // if (method === 'get') {
-  //   params = {
-  //     params: data
-  //   }
-  // } else {
-  //   params = {
-  //     data
-  //   }
-  // }
   return new Promise((resolve, reject) => {
     METHOD(url, data).then((res: AxiosResponse) => {
+      // console.log(res);
       if (res.data.status === 200 || res.data.status === 201) {
-        resolve(res.data.obj as T)
+        resolve(res.data.data as T)
+      } else if(res.status == 200 && typeof res.data !== 'object') {
+        resolve(res.data as T)
       } else {
-        if (res.data.errors) {
-          ElMessage.error(res.data.errors)
+        if (res.data.message) {
+          ElMessage.error(res.data.message)
         }
         reject()
       }
     }).catch((error: any) => {
-      if (error?.response?.data?.errors) {
-        ElMessage.error(error.response.data.errors)
+      // console.log(error)
+      if (error?.response?.data?.message) {
+        ElMessage.error(JSON.stringify(error.response.data.message))
       } else {
-        ElMessage.error(error.message)
+        ElMessage.error(JSON.stringify(error.message))
       }
       reject(error)
     })

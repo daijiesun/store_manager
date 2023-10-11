@@ -1,7 +1,6 @@
 <template>
   <router-view></router-view>
 </template>
-
 <style>
 html{
   height: 100vh;

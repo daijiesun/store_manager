@@ -1,11 +1,13 @@
-<!--  -->
 <template>
   <el-container>
     <el-header>
-      <div>Store Manager</div>
-      <el-dropdown size="small">
+      <div style="cursor: pointer" @click="goHome">
+        <h3>Live Manager</h3>
+      </div>
+      <el-dropdown size="large">
         <span class="el-dropdown-link">
-          {{user.username}}<i class="el-icon-arrow-down el-icon--right"></i>
+          欢迎，{{ user.username }}
+          <i class="el-icon-arrow-down el-icon--right"></i>
         </span>
         <template #dropdown>
           <el-dropdown-menu>
@@ -18,19 +20,10 @@
     </el-header>
     <el-container>
       <el-aside width="200px">
-        <el-menu :default-openeds="['1']" :router="true" :unique-opened="true">
-          <el-sub-menu index="1">
-            <template #title>
-              <i class="el-icon-message"></i>商品管理
-            </template>
-            <el-menu-item index="/goods/list">商品列表</el-menu-item>
-            <el-menu-item index="/goods/typeList">商品类型列表</el-menu-item>
-          </el-sub-menu>
-          <el-sub-menu index="2">
-            <template #title>
-              <i class="el-icon-coin"></i>配置管理
-            </template>
-            <el-menu-item index="/config/base">基础配置</el-menu-item>
+        <el-menu :default-openeds="[0]" :router="true" :unique-opened="true">
+          <el-sub-menu v-for="(m,key) in muens" :index="key" :key="key">
+            <template #title> <i class="el-icon-message"></i>{{m.title}} </template>
+            <el-menu-item v-for="s in m.subMuens" :index="s.url" :key="s.url">{{s.title}}</el-menu-item>
           </el-sub-menu>
         </el-menu>
       </el-aside>
@@ -44,7 +37,7 @@
   </el-container>
 </template>
 
-<script lang='ts'>
+<script lang="ts">
 import { reactive, toRefs } from "vue";
 import { postLogout } from "@/api/user";
 import { SSStorate } from "@/utils/storage";
@@ -52,7 +45,47 @@ import { useRouter } from "vue-router";
 export default {
   name: "",
   setup() {
-    const userInfo = SSStorate.getItem("userInfo");
+    const muens = reactive([
+      {
+        title: "用户管理",
+        icon: "el-icon-message",
+        subMuens: [
+          {
+            title: "用户列表",
+            url: "/user/list",
+          },
+          // {
+          //   title: "角色",
+          //   url: "/user/roles",
+          // },
+        ],
+      },
+      {
+        title: "内容管理",
+        icon: "el-icon-avatar",
+        subMuens: [
+          {
+            title: "文章列表",
+            url: "/article/list",
+          },
+          {
+            title: "分类管理",
+            url: "/article/types",
+          },
+        ],
+      },
+      {
+        title: "配置管理",
+        icon: "el-icon-coin",
+        subMuens: [
+          {
+            title: "基础配置",
+            url: "/config",
+          }
+        ],
+      },
+    ]);
+    const userInfo = SSStorate.getItem("userInfo") || {};
     const user = reactive({
       phoneNum: userInfo.phoneNum,
       username: userInfo.username,
@@ -63,28 +96,33 @@ export default {
       SSStorate.clear();
       router.push("/login");
     };
+    const goHome = () => {
+      router.push("/");
+    };
     return {
       user,
       logout,
+      goHome,
+      muens
     };
   },
 };
 </script>
-<style lang='less' scoped>
+<style lang="less" scoped>
 .el-container {
   height: 100%;
 }
 .el-header {
-  background-color: var(--el-color-primary);
+  // background-color: var(--el-color-primary);
   line-height: 60px;
-  color: #fff;
+  // color: var(--el-color-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
 
   :deep(.el-dropdown) {
     font-size: 16px;
-    color: #fff;
+    // color: var(--el-color-primary);
     font-weight: 600;
     cursor: pointer;
   }

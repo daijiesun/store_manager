@@ -6,7 +6,7 @@ export interface FilePath {
   uid:string | number
 }
 
-export class Goods {
+export class Article {
   public readonly id: string = "";
   public readonly createDate: string = "";
   public title: string = "";
@@ -21,7 +21,7 @@ export class Goods {
 }
 
 //商品类型
-export class GoodsType {
+export class ArticleType {
   public id: string = "";
   public title: string = "";
   public readonly createDate: string = "";

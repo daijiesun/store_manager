@@ -3,14 +3,14 @@
     <el-form class="search_top form_row">
       <el-row>
         <el-col :span="5">
-          <el-form-item label="商品名称">
+          <el-form-item label="文章名称">
             <el-input v-model="searchData.params.title"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="5" :offset="1">
-          <el-form-item label="商品类型">
+          <el-form-item label="文章类型">
             <el-select v-model="searchData.params.type" clearable>
-              <el-option v-for="(item,index) in goodsTypes" :key="index" :value="item.id" :label="item.title"></el-option>
+              <el-option v-for="(item,index) in articleTypes" :key="index" :value="item.id" :label="item.title"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
@@ -27,15 +27,15 @@
       </el-row>
     </el-form>
     <el-row class="table_action">
-      <el-button type="primary" @click="editGoods()">新增</el-button>
+      <el-button type="primary" @click="editArticle()">新增</el-button>
       <el-button type="danger" @click="batchDel">批量删除</el-button>
     </el-row>
     <el-table class="search_table" :data="searchResult.data" @selection-change="handleSelectionChange" height="calc(100vh - 320px)" width="100%">
       <el-table-column type="index" width="30"> </el-table-column>
       <el-table-column type="selection" width="55"> </el-table-column>
-      <el-table-column prop="title" label="商品名称"></el-table-column>
-      <el-table-column prop="type" label="商品类型">
-        <template #default="scope">{{scope.row.goodsType?.title}}</template>
+      <el-table-column prop="title" label="文章名称"></el-table-column>
+      <el-table-column prop="type" label="文章类型">
+        <template #default="scope">{{scope.row.articleType?.title}}</template>
       </el-table-column>
       <el-table-column label="缩略图">
         <template #default="scope">
@@ -56,15 +56,15 @@
       <el-table-column prop label="操作" width="180">
         <template #default="scope">
           <div>
-            <el-button @click="editGoods(scope.row.id)" type="primary" icon="el-icon-edit" circle></el-button>
-            <el-button @click="delGoods(scope.row.id)" type="danger" icon="el-icon-delete" circle></el-button>
+            <el-button @click="editArticle(scope.row.id)" type="primary" icon="el-icon-edit" circle></el-button>
+            <el-button @click="delArticle(scope.row.id)" type="danger" icon="el-icon-delete" circle></el-button>
           </div>
         </template>
       </el-table-column>
     </el-table>
     <el-pagination class="search_page" @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="searchData.page" :page-sizes="searchData.sizes" :page-size="searchData.pageSize" layout="total,jumper, sizes, prev, pager, next" :total="searchResult.total"></el-pagination>
-    <el-dialog top="10px" title="编辑商品信息" v-model="dialogVisible" width="960px" :before-close="handleClose" :close-on-click-modal="false" destroy-on-close>
-      <GoodsDetail ref="editRef" :id="id" @submit="submit" />
+    <el-dialog top="10px" title="编辑文章信息" v-model="dialogVisible" width="960px" :before-close="handleClose" :close-on-click-modal="false" destroy-on-close>
+      <ArticleDetail ref="editRef" :id="id" @submit="submit" />
     </el-dialog>
   </div>
 </template>
@@ -72,11 +72,11 @@
 <script lang='ts'>
 import { onMounted, reactive, ref, toRefs } from "vue";
 import { Dict, PageRequest, PageResponse } from "@/types/common";
-import { getGoodsList, batchDeleteGoods, deleteGood } from "@/api/goods";
+import { getArticleList, batchDeleteArticle, deleteGood } from "@/api/article";
 import { ElMessage, ElMessageBox } from "element-plus";
-import useGoodsTypes from "@/composables/goods/useGoodsTypes";
-import GoodsDetail from "./components/GoodsDetail.vue";
-import { Goods } from "@/types/goods";
+import useArticleTypes from "@/composables/article/useArticleTypes";
+import ArticleDetail from "./components/ArticleDetail.vue";
+import { Article } from "@/types/article";
 import { isValids } from "@/store/module/common";
 class SearchModel {
   title: string = "";
@@ -84,26 +84,26 @@ class SearchModel {
   isValid: string = "";
 }
 export default {
-  name: "GoodsList",
+  name: "ArticleList",
   components: {
-    GoodsDetail,
+    ArticleDetail,
   },
   setup() {
     // 查询逻辑
     const searchData = reactive<PageRequest<SearchModel>>(
       new PageRequest<SearchModel>(new SearchModel())
     );
-    const searchResult = reactive<PageResponse<Goods[]>>(
-      new PageResponse<Goods[]>([])
+    const searchResult = reactive<PageResponse<Article[]>>(
+      new PageResponse<Article[]>([])
     );
-    const { goodsTypes, getGoodsTypes } = useGoodsTypes();
+    const { articleTypes, getArticleTypes } = useArticleTypes();
 
     const search = async () => {
-      const res = await getGoodsList(searchData);
+      const res = await getArticleList(searchData);
       Object.assign(searchResult, res);
     };
-    const delGoods = (id: string) => {
-      ElMessageBox.confirm("此操作将永久删除该商品, 是否继续?", "提示", {
+    const delArticle = (id: string) => {
+      ElMessageBox.confirm("此操作将永久删除该文章, 是否继续?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
@@ -116,8 +116,8 @@ export default {
       });
     };
 
-    const multipleSelection = ref<Goods[]>([]);
-    const handleSelectionChange = (val: Goods[]) => {
+    const multipleSelection = ref<Article[]>([]);
+    const handleSelectionChange = (val: Article[]) => {
       multipleSelection.value = val;
     };
     const batchDel = async () => {
@@ -125,10 +125,10 @@ export default {
         ElMessage.error("请选择需要删除的项");
         return;
       }
-      const ids = multipleSelection.value.map((item: Goods) => {
+      const ids = multipleSelection.value.map((item: Article) => {
         return item.id;
       });
-      const res = await batchDeleteGoods(ids);
+      const res = await batchDeleteArticle(ids);
       if (res) {
         ElMessage.success("批量删除成功");
         search();
@@ -146,8 +146,8 @@ export default {
     const id = ref<string>("");
     const dialogVisible = ref<boolean>(false);
     const editRef = ref<string>("");
-    const editGoods = (goodsId: string) => {
-      id.value = goodsId;
+    const editArticle = (articleId: string) => {
+      id.value = articleId;
       dialogVisible.value = true;
     };
     const handleClose = (done: Function) => {
@@ -163,12 +163,12 @@ export default {
     };
 
     onMounted(() => {
-      getGoodsTypes();
+      getArticleTypes();
       search();
     });
     return {
       searchData,
-      goodsTypes,
+      articleTypes,
       searchResult,
       id,
       dialogVisible,
@@ -176,8 +176,8 @@ export default {
       multipleSelection,
       isValids,
       search,
-      editGoods,
-      delGoods,
+      editArticle,
+      delArticle,
       batchDel,
       handleSizeChange,
       handleCurrentChange,

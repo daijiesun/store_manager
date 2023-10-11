@@ -1,39 +1,39 @@
 <template>
-  <div class="goods_detail form_row">
+  <div class="article_detail form_row">
     <el-divider content-position="left">基础信息</el-divider>
     <section>
-      <el-form :model="goodsDetail" label-width="110px" ref="form" :rules="rules">
+      <el-form :model="articleDetail" label-width="110px" ref="form" :rules="rules">
         <el-row>
           <el-col :sm="12" :md="8">
-            <el-form-item label="商品名称" prop="title">
-              <el-input v-model.trim="goodsDetail.title"></el-input>
+            <el-form-item label="文章名称" prop="title">
+              <el-input v-model.trim="articleDetail.title"></el-input>
             </el-form-item>
           </el-col>
           <el-col :sm="12" :md="8">
-            <el-form-item label="商品描述" prop="description">
-              <el-input v-model.trim="goodsDetail.description"></el-input>
+            <el-form-item label="文章描述" prop="description">
+              <el-input v-model.trim="articleDetail.description"></el-input>
             </el-form-item>
           </el-col>
           <el-col :sm="12" :md="8">
-            <el-form-item label="商品种类" prop="type">
-              <el-select v-model="goodsDetail.type">
-                <el-option v-for="item in goodsTypes" :key="item.id" :label="item.title" :value="item.id"></el-option>
+            <el-form-item label="文章种类" prop="type">
+              <el-select v-model="articleDetail.type">
+                <el-option v-for="item in articleTypes" :key="item.id" :label="item.title" :value="item.id"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :sm="12" :md="8">
-            <el-form-item label="商品金额" prop="amount">
-              <el-input-number v-model="goodsDetail.amount" controls-position="right" :min="0"></el-input-number>
+            <el-form-item label="文章金额" prop="amount">
+              <el-input-number v-model="articleDetail.amount" controls-position="right" :min="0"></el-input-number>
             </el-form-item>
           </el-col>
           <el-col :sm="12" :md="8">
-            <el-form-item label="商品库存" prop="count">
-              <el-input-number v-model="goodsDetail.count" controls-position="right" :min="0" step-strictly></el-input-number>
+            <el-form-item label="文章库存" prop="count">
+              <el-input-number v-model="articleDetail.count" controls-position="right" :min="0" step-strictly></el-input-number>
             </el-form-item>
           </el-col>
           <el-col :sm="12" :md="8">
             <el-form-item label="启用">
-              <el-switch v-model="goodsDetail.isValid"></el-switch>
+              <el-switch v-model="articleDetail.isValid"></el-switch>
             </el-form-item>
           </el-col>
         </el-row>
@@ -41,7 +41,7 @@
     </section>
     <el-divider content-position="left">缩略图配置</el-divider>
     <section class="upload">
-      <el-upload :action="uploadUrl" list-type="picture-card" :auto-upload="true" :show-file-list="true" :on-success="avatarSuccess" :file-list="goodsDetail.avatar">
+      <el-upload :action="uploadUrl" :headers="{'Authorization': authorization}" list-type="picture-card" :auto-upload="true" :show-file-list="true" :on-success="avatarSuccess" :file-list="articleDetail.avatar">
         <template #default>
           <i class="el-icon-plus"></i>
         </template>
@@ -59,7 +59,7 @@
     </section>
     <el-divider content-position="left">轮播图配置</el-divider>
     <section class="upload">
-      <el-upload :action="uploadUrl" list-type="picture-card" :auto-upload="true" :on-success="swiperSuccess" :file-list="goodsDetail.swipeImages">
+      <el-upload :action="uploadUrl" list-type="picture-card" :auto-upload="true" :on-success="swiperSuccess" :file-list="articleDetail.swipeImages">
         <template #default>
           <i class="el-icon-plus"></i>
         </template>
@@ -78,9 +78,9 @@
         </template>
       </el-upload>
     </section>
-    <el-divider content-position="left">商品详情</el-divider>
+    <el-divider content-position="left">文章详情</el-divider>
     <section>
-      <QuillEditor v-model="goodsDetail.details" />
+      <QuillEditor v-model="articleDetail.details" />
     </section>
     <section class="bottom-action">
       <el-button type="primary" @click="submitEdit">提交</el-button>
@@ -93,16 +93,17 @@
 
 <script lang='ts'>
 import { onMounted, reactive, ref, toRefs } from "vue";
-import { Goods, GoodsType, FilePath } from "@/types/goods";
+import { Article, ArticleType, FilePath } from "@/types/article";
 import QuillEditor from "@/components/RichEditor.vue";
 import getters from "@/store/getters";
 import { ElMessage } from "element-plus";
-import { createGoods, updateGoods } from "@/api/goods";
-import useGoodsTypes from "@/composables/goods/useGoodsTypes";
-import { getGoodsInfo } from "@/api/goods";
+import { createArticle, updateArticle } from "@/api/article";
+import useArticleTypes from "@/composables/article/useArticleTypes";
+import { getArticleInfo } from "@/api/article";
 import { getFileName } from "@/utils/common";
+import { SSStorate } from '@/utils/storage';
 export default {
-  name: "GoodsDetail",
+  name: "ArticleDetail",
   props: {
     id: String,
   },
@@ -116,9 +117,10 @@ export default {
   },
   setup(props: any, { emit }) {
     const { id } = toRefs(props);
-    const goodsDetail = reactive<Goods>(new Goods());
-    const { goodsTypes, getGoodsTypes } = useGoodsTypes();
+    const articleDetail = reactive<Article>(new Article());
+    const { articleTypes, getArticleTypes } = useArticleTypes();
     const form = ref<any>("");
+    const authorization = SSStorate.getItem('token')
     const rules = {
       title: { required: true, message: "请输入" },
       description: { required: true, message: "请输入" },
@@ -128,7 +130,7 @@ export default {
     };
     // have id is edit
     if (id.value) {
-      getGoodsInfo(id.value).then((res: Goods) => {
+      getArticleInfo(id.value).then((res: Article) => {
         res.avatar = res.avatar
           ? ([
               {
@@ -146,25 +148,25 @@ export default {
             uid: name,
           };
         });
-        Object.assign(goodsDetail, { ...res });
+        Object.assign(articleDetail, { ...res });
       });
     } else {
-      Object.assign(goodsDetail, { ...new Goods() });
+      Object.assign(articleDetail, { ...new Article() });
     }
 
     //images
     let dialogImageUrl = ref<string>("");
     let dialogVisible = ref<boolean>(false);
     const handleRemove = (file: any) => {
-      goodsDetail.swipeImages = (
-        goodsDetail.swipeImages as Array<FilePath>
+      articleDetail.swipeImages = (
+        articleDetail.swipeImages as Array<FilePath>
       ).filter((item: FilePath) => {
         return item.uid !== file.uid;
       });
     };
     // 轮播
     const swiperSuccess = (response: any, file: any) => {
-      (goodsDetail.swipeImages as Array<FilePath>).push({
+      (articleDetail.swipeImages as Array<FilePath>).push({
         name: response.name,
         url: response.path,
         uid: file.uid,
@@ -172,7 +174,7 @@ export default {
     };
     // 缩略图
     const avatarSuccess = (response: any, file: any) => {
-      goodsDetail.avatar = [
+      articleDetail.avatar = [
         {
           name: response.name,
           url: response.path,
@@ -189,12 +191,12 @@ export default {
     const submitEdit = () => {
       form.value.validate(async (val: boolean) => {
         if (val) {
-          if (!goodsDetail.avatar[0] || !goodsDetail.swipeImages.length) {
+          if (!articleDetail.avatar[0] || !articleDetail.swipeImages.length) {
             ElMessage.error("请选择图片");
             return;
           }
-          const submitDto: Goods = new Goods();
-          Object.assign(submitDto, goodsDetail);
+          const submitDto: Article = new Article();
+          Object.assign(submitDto, articleDetail);
           submitDto.avatar = (submitDto.avatar as Array<FilePath>)[0]
             .url as string;
           submitDto.swipeImages = (
@@ -202,20 +204,20 @@ export default {
           ).map<string>((item: FilePath) => {
             return item.url;
           });
-          const action: Function = submitDto.id ? updateGoods : createGoods;
+          const action: Function = submitDto.id ? updateArticle : createArticle;
           await action({ ...submitDto });
           emit("submit");
         }
       });
     };
     onMounted(() => {
-      getGoodsTypes();
+      getArticleTypes();
     });
 
     return {
-      goodsDetail,
+      articleDetail,
       rules,
-      goodsTypes,
+      articleTypes,
       dialogImageUrl,
       dialogVisible,
       form,

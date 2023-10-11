@@ -28,7 +28,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <el-dialog :title="submitDto.id ? '编辑商品类型':'新增商品类型'" v-model="dialogVisible" width="500px">
+    <el-dialog :title="submitDto.id ? '编辑文章类型':'新增文章类型'" v-model="dialogVisible" width="500px">
       <el-form>
         <el-form-item label="类型名称" :rules="{required: true}">
           <el-input v-model.trim="submitDto.title"></el-input>
@@ -47,30 +47,30 @@
 <script lang='ts'>
 import { onMounted, reactive, ref } from "vue";
 import {
-  deleteGoodsType,
-  editGoodsType,
-  getGoodsTypeList,
-} from "../../api/goods";
-import { GoodsType } from "../../types/goods";
+  deleteArticleType,
+  editArticleType,
+  getArticleTypeList,
+} from "../../api/article";
+import { ArticleType } from "../../types/article";
 import { ElMessage, ElMessageBox } from "element-plus";
 export default {
-  name: "GoodsType",
+  name: "ArticleType",
   setup() {
     const typeName = ref<string>("");
-    const typeList = ref<GoodsType[]>([]);
-    const tableList = ref<GoodsType[]>([]);
-    const submitDto = reactive<GoodsType>(new GoodsType());
+    const typeList = ref<ArticleType[]>([]);
+    const tableList = ref<ArticleType[]>([]);
+    const submitDto = reactive<ArticleType>(new ArticleType());
     const dialogVisible = ref<boolean>(false);
     const featchData = async () => {
-      typeList.value = await getGoodsTypeList();
+      typeList.value = await getArticleTypeList();
       search();
     };
     const search = () => {
-      tableList.value = typeList.value.filter((item: GoodsType) => {
+      tableList.value = typeList.value.filter((item: ArticleType) => {
         return item.title.includes(typeName.value);
       });
     };
-    const editType = (row: GoodsType) => {
+    const editType = (row: ArticleType) => {
       Object.assign(submitDto, row);
       showDialog(false);
     };
@@ -81,7 +81,7 @@ export default {
         cancelButtonText: "取消",
         type: "warning",
       }).then(async () => {
-        const res = await deleteGoodsType(id);
+        const res = await deleteArticleType(id);
         if (res) {
           ElMessage.success("删除成功");
           featchData();
@@ -100,7 +100,7 @@ export default {
         ElMessage.error("请输入类型名称");
         return;
       }
-      const res = await editGoodsType(submitDto);
+      const res = await editArticleType(submitDto);
       if (res) {
         ElMessage.success("提交成功");
         featchData();

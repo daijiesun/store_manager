@@ -20,7 +20,7 @@
       </div>
     </div>
     <div class="login-pannel">
-      <div class="pannel-top">Store CMS</div>
+      <div class="pannel-top">Apollo CMS</div>
       <div class="pannel-form">
         <el-form :model="form" ref="forms" :rules="rules" label-position="top">
           <el-form-item label="用户名" prop="username">
@@ -29,8 +29,21 @@
           <el-form-item label="密码" prop="password">
             <el-input type="password" v-model="form.password" placeholder="请输入密码"></el-input>
           </el-form-item>
+          <el-form-item label="确认密码" prop="checkPassword" v-if="showRegister">
+            <el-input type="password" v-model="form.checkPassword" placeholder="请再次输入密码"></el-input>
+          </el-form-item>
+          <el-form-item label="验证码" prop="imageCode">
+            <div class="image-code">
+              <el-input maxlength="4" type="password" v-model="form.imageCode" placeholder="请输入验证码"></el-input>
+              <ImageCode />
+            </div>
+          </el-form-item>
           <el-form-item class="mt-50">
-            <el-button class="percent100" size="small" type="primary" @click="login" :loading="form.loading">登陆</el-button>
+            <div class="footer">
+              <el-button class="percent100" type="primary" @click="login" :loading="form.loading">{{showRegister ? '注 册':'登 录'}}</el-button>
+              <el-button type="text" v-if="!showRegister" class="mt-20" @click="showRegister = true">没有账号？</el-button>
+              <el-button type="text" v-else class="mt-20" @click="showRegister = false">已有账号</el-button>
+            </div>
           </el-form-item>
         </el-form>
       </div>
@@ -39,34 +52,46 @@
 </template>
 
 <script lang='ts'>
-import { reactive, ref } from "vue";
-import { postLogin } from "@/api/user";
+import { onMounted, reactive, ref } from "vue";
+import { postLogin, postRegister } from "@/api/user";
 import { SSStorate } from "@/utils/storage";
 import { useRouter } from "vue-router";
 import md5 from "md5";
+import { ElMessage } from "element-plus/es";
+import ImageCode from "@/components/ImageCode.vue";
 export default {
   name: "",
+  components: { ImageCode },
   setup() {
     const router = useRouter();
     const form = reactive({
       username: "",
       password: "",
+      checkPassword: "",
+      imageCode: "",
       loading: false,
     });
     const rules = {
       username: { required: true, message: "请输入用户名" },
       password: { required: true, message: "请输入密码" },
+      checkPassword: { required: true, message: "请再次输入密码" },
+      imageCode: { required: true, message: "请输入验证码" },
     };
     const forms = ref(null);
     const login = () => {
       (forms.value as any).validate((val: boolean) => {
         if (val) {
           form.loading = true;
-          postLogin({
+          if (showRegister.value && form.password !== form.checkPassword) {
+            form.loading = false;
+            return ElMessage.error("两次密码不一致");
+          }
+          const fetch = showRegister.value ? postRegister : postLogin;
+          fetch({
             username: form.username,
             password: md5(form.password),
-          })
-            .then((res) => {
+            imageCode: form.imageCode,
+          }).then((res) => {
               if (res.token) {
                 SSStorate.setItem("token", res.token);
                 SSStorate.setItem("userInfo", {
@@ -75,18 +100,28 @@ export default {
                 });
                 router.push("/");
               }
-            })
-            .finally(() => {
+            }).finally(() => {
               form.loading = false;
             });
         }
       });
     };
+    const showRegister = ref<Boolean>(false);
+    const closeRegister = () => {
+      showRegister.value = false;
+    };
+    const clickRegister = () => {
+      showRegister.value = true;
+    };
+
     return {
       form,
       rules,
       forms,
+      showRegister,
       login,
+      closeRegister,
+      clickRegister,
     };
   },
 };
@@ -99,8 +134,8 @@ export default {
   background-color: #000;
 }
 .login-pannel {
-  width: 370px;
-  height: 400px;
+  width: 470px;
+  min-height: 400px;
   background-color: #fff;
   position: absolute;
   right: 20%;
@@ -119,6 +154,26 @@ export default {
 }
 .pannel-form {
   padding: 20px 30px;
+}
+:deep() .image-code {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  svg {
+    height: 40px;
+    width: 150px;
+    cursor: pointer;
+  }
+  .el-input {
+    flex-shrink: 0;
+    width: 200px;
+  }
+}
+.footer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 </style>
 <style lang="less" scoped>
@@ -151,12 +206,12 @@ export default {
   left: -500px;
   top: -500px;
   transform-style: preserve-3d;
-  animation: move 20s infinite linear;
+  animation: move 30s infinite linear;
   animation-fill-mode: forwards;
 }
 
 .wrap:nth-child(2) {
-  animation: move 20s infinite linear;
+  animation: move 30s infinite linear;
   animation-delay: 6s;
 }
 
@@ -164,10 +219,10 @@ export default {
   width: 100%;
   height: 100%;
   position: absolute;
-  background: url(../assets/img/galaxy.jpeg);
+  background: url(../../assets/img/galaxy.jpeg);
   background-size: cover;
   opacity: 0;
-  animation: fade 20s infinite linear;
+  animation: fade 30s infinite linear;
 }
 
 .wrap:nth-child(2) .wall {
